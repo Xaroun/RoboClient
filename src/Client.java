@@ -1,6 +1,7 @@
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Enumeration;
@@ -10,9 +11,79 @@ import java.util.Enumeration;
  */
 public class Client {
 
+    private int responseCode;
+
     public static void main(String args[]) {
         Client client = new Client();
-        client.sendPost();
+        //client.sendPost();
+
+
+        Thread polling = new Thread() {
+            @Override
+            public void run() {
+                while(true) {
+                    client.startPolling();
+                    try {
+                        this.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        };
+
+        polling.start();
+    }
+
+
+    private void startPolling() {
+
+            String myProperUuid = "123e4567-e89b-12d3-a456-426655440000";
+            String myWrongUuid = "aaaa-2452";
+
+            String url = "http://127.0.0.1:5000/api/robots/" + myProperUuid + "/jobs";
+
+            try {
+                URL obj = new URL(url);
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+
+                responseCode = con.getResponseCode();
+                System.out.println("\nSending 'GET' request to URL : " + url);
+                System.out.println("Response Code : " + responseCode);
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(con.getInputStream()));
+
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                //print result
+                System.out.println(response.toString());
+
+            } catch (Exception e) {
+                switch(responseCode) {
+                    case 404:
+                        System.err.println("Your uuid is invalid.");
+                        break;
+                    case 500:
+                        System.err.println("Check your Internet connection.");
+                        break;
+                    default:
+                        System.err.println("Something went wrong.");
+                        break;
+                }
+
+            }
+
+
     }
 
     private void sendPost() {

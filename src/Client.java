@@ -1,3 +1,7 @@
+import com.google.gson.*;
+import enums.Constructions;
+import model.RobotPost;
+
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -12,39 +16,82 @@ import java.util.Enumeration;
 public class Client {
 
     private int responseCode;
+    private static final String ACCEPT_HEADER = "application/vnd.roboapp.v1+json";
+    private static final String CONTENT_TYPE_HEADER = "application/vnd.roboapp.v1+json";
+    private RobotPost robot;
+
 
     public static void main(String args[]) {
         Client client = new Client();
-        client.sendNewPost();
-//        client.sendPost();
-//
-//
-//        Thread polling = new Thread() {
-//            @Override
-//            public void run() {
-//                while(true) {
-//                    client.startPolling();
-//                    try {
-//                        this.sleep(5000);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//
-//            }
-//        };
-//
-//        polling.start();
+        client.init();
     }
 
+    private void init() {
+        String existingRobot = "4e86790f-b2ab-4945-aaa7-2db83d12b740";
+        String newRobot = "3f681ded-0d86-4403-af6a-2c0d23ffc664";
 
-    private void startPolling() {
+        boolean wasLoggedBefore = checkIfLoggedBefore(newRobot);
 
-            String myProperUuid = "123e4567-e89b-12d3-a456-426655440000";
-            String myRobotId = "1234";
-            String myGameId = "TIC_TAC";
+        if(wasLoggedBefore) {
+            checkConstruction(Constructions.EV3);
 
-            String url = "http://127.0.0.1:5000/api/robots/" + myRobotId + "/games/" + myGameId;
+        } else {
+            checkConstruction(Constructions.EV3);
+            registerRobot(newRobot, robot);
+        }
+    }
+
+    private void checkConstruction(Constructions construction) {
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/config/" + construction.toString();
+        System.out.println("Checking construction..");
+
+        try {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            con.setRequestProperty("Accept", ACCEPT_HEADER);
+            con.setRequestProperty("Content-Type", CONTENT_TYPE_HEADER);
+
+            responseCode = con.getResponseCode();
+
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            Gson gson = new Gson();
+            robot = gson.fromJson(response.toString(), RobotPost.class);
+
+            System.out.println(parseJson(response.toString(), true));
+
+        } catch (Exception e) {
+            switch(responseCode) {
+                case 404:
+                    System.err.println("Robot with this uuid wasn't logged before");
+                    break;
+                case 500:
+                    System.err.println("Check your Internet connection.");
+                    break;
+                default:
+                    System.err.println("Something went wrong.");
+                    break;
+            }
+        }
+    }
+
+    private boolean checkIfLoggedBefore(String robotSerialNumber) {
+
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotSerialNumber+ "/me";
+        System.out.println("Checking if logged before..");
 
             try {
                 URL obj = new URL(url);
@@ -52,7 +99,7 @@ public class Client {
 
 
                 responseCode = con.getResponseCode();
-                System.out.println("\nSending 'GET' request to URL : " + url);
+
                 System.out.println("Response Code : " + responseCode);
 
                 BufferedReader in = new BufferedReader(
@@ -67,25 +114,98 @@ public class Client {
                 }
                 in.close();
 
-                //print result
-                System.out.println(response.toString());
+                System.out.println(parseJson(response.toString(), false));
+
 
             } catch (Exception e) {
                 switch(responseCode) {
                     case 404:
-                        System.err.println("Your uuid is invalid.");
-                        break;
+                        System.err.println("Robot with this uuid wasn't logged before");
+                        return false;
                     case 500:
                         System.err.println("Check your Internet connection.");
-                        break;
+                        return false;
                     default:
                         System.err.println("Something went wrong.");
-                        break;
+                        return false;
                 }
-
             }
+        return true;
+    }
 
+    private void registerRobot(String robotSerialNumber, RobotPost robot) {
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/register";
 
+        System.out.println(robot.getCurrent_system());
+        System.out.println(robot.getLego_construction());
+        System.out.println(robot.getRobot_model());
+        System.out.println(robot.getSerial_number());
+
+//        System.out.println("Registering " + robotSerialNumber);
+//        try {
+//
+//            URL obj = new URL(url);
+//            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+//
+//            //add request header
+//            con.setRequestMethod("POST");
+//            con.setRequestProperty("Accept", ACCEPT_HEADER);
+//            con.setRequestProperty("Content-Type", CONTENT_TYPE_HEADER);
+//
+//            String body = "{\n" +
+//                    "\"serial_number\": \"" + robotSerialNumber + "\",\n" +
+//                    "\"current_system\": \"LEJOS\"\n" +
+//                    "\"lego_construction\": \"1\"\n" +
+//                    "\"robot_model\": \"EV3\"\n" +
+//                    "}";
+//
+//            System.out.println(body);
+//
+//
+//            //send post request
+//            con.setDoOutput(true);
+//            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+//            wr.writeBytes(body);
+//            wr.flush();
+//            wr.close();
+//
+//            int responseCode = con.getResponseCode();
+//
+//            System.out.println("Post parameters : " + body);
+//            System.out.println("Response Code : " + responseCode);
+//
+//            BufferedReader in = new BufferedReader(
+//                    new InputStreamReader(con.getInputStream()));
+//            String inputLine;
+//            StringBuffer response = new StringBuffer();
+//
+//            while ((inputLine = in.readLine()) != null) {
+//                response.append(inputLine);
+//            }
+//            in.close();
+//
+//            //print result
+//            System.out.println(response.toString());
+//
+//
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+    }
+
+    private String parseJson(String rawJson, boolean isArray) {
+        if(isArray) {
+            JsonParser parser = new JsonParser();
+            JsonArray consctructionJson = parser.parse(rawJson.toString()).getAsJsonArray();
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            return gson.toJson(consctructionJson);
+        } else {
+            JsonParser parser = new JsonParser();
+            JsonObject object = parser.parse(rawJson).getAsJsonObject();
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            return gson.toJson(object);
+        }
     }
 
     private void sendPost() {

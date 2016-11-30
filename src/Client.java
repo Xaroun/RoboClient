@@ -2,6 +2,7 @@ import com.google.gson.*;
 import enums.Constructions;
 import enums.RobotSystem;
 import model.RobotConstruction;
+import model.RobotPairKey;
 import model.RobotRegister;
 import model.RobotStatus;
 
@@ -15,13 +16,14 @@ import java.util.LinkedList;
 /**
  * Created by Mateusz on 11.05.2016.
  */
-public class Client {
+public class Client<T> {
 
     private int responseCode;
     private static final String ACCEPT_HEADER = "application/vnd.roboapp.v1+json";
     private static final String CONTENT_TYPE_HEADER = "application/vnd.roboapp.v1+json";
     private LinkedList<RobotConstruction> listOfRobotConstructions;
     private RobotStatus robotStatus;
+    private RobotPairKey robotPairKey;
 
 
     public static void main(String args[]) {
@@ -44,8 +46,74 @@ public class Client {
         }
 
         checkStatusByRobotId(robotStatus.getRobot_id());
+        getPairKey(robotStatus.getRobot_id());
 
+        System.out.println("\n PAIR KEY IS: " + robotPairKey.getPair_key());
     }
+
+    private void getPairKey(String robot_id) {
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/tinder/virgins/" + robot_id;
+        System.out.println("Getting pairkey.. ");
+
+        try {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            responseCode = con.getResponseCode();
+
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+
+            robotPairKey = pairKeyJsonToObject(response.toString());
+            System.out.println(parseJson(response.toString(), false));
+
+
+        } catch (Exception e) {
+            switch(responseCode) {
+                case 404:
+                    System.err.println("Robot with this uuid not found");
+                    break;
+                case 500:
+                    System.err.println("Check your Internet connection.");
+                    break;
+                default:
+                    System.err.println("Something went wrong.");
+                    break;
+            }
+        }
+    }
+
+    private RobotPairKey pairKeyJsonToObject(String rawJson) {
+        JsonParser parser = new JsonParser();
+        Gson gson = new Gson();
+
+        JsonElement robotStatusElement = parser.parse(rawJson).getAsJsonObject();
+        RobotPairKey robotPairKey = gson.fromJson(robotStatusElement, RobotPairKey.class);
+
+        return robotPairKey;
+    }
+
+    private RobotStatus statusJsonToObject(String rawJson) {
+        JsonParser parser = new JsonParser();
+        Gson gson = new Gson();
+
+        JsonElement robotStatusElement = parser.parse(rawJson).getAsJsonObject();
+        RobotStatus robotStatus = gson.fromJson(robotStatusElement, RobotStatus.class);
+
+        return robotStatus;
+    }
+
 
     private void checkStatusByRobotId(String robot_id) {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robot_id+ "/status";
@@ -207,16 +275,6 @@ public class Client {
                 }
             }
         return true;
-    }
-
-    private RobotStatus statusJsonToObject(String rawJson) {
-        JsonParser parser = new JsonParser();
-        Gson gson = new Gson();
-
-        JsonElement robotStatusElement = parser.parse(rawJson).getAsJsonObject();
-        RobotStatus robotStatus = gson.fromJson(robotStatusElement, RobotStatus.class);
-
-        return robotStatus;
     }
 
     private void registerRobot(RobotRegister robotRegister) {

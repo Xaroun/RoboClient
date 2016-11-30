@@ -124,47 +124,11 @@ public class Client{
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robot_id+ "/status";
         System.out.println("Checking status by id.. " + robot_id);
 
-        try {
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-            responseCode = con.getResponseCode();
+        String response = doGETquery(url, isDebugMode);
+        robotStatus = statusJsonToObject(response.toString());
 
-            if(isDebugMode) {
-                System.out.println("Response Code : " + responseCode);
-            }
-
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-
-            String inputLine;
-            StringBuffer response = new StringBuffer();
-
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-
-            robotStatus = statusJsonToObject(response.toString());
-
-            if(isDebugMode) {
-                System.out.println(parseJson(response.toString(), false));
-            }
-
-
-        } catch (Exception e) {
-            switch(responseCode) {
-                case 404:
-                    System.err.println("Robot with this uuid not found");
-                    break;
-                case 500:
-                    System.err.println("Check your Internet connection.");
-                    break;
-                default:
-                    System.err.println("Something went wrong.");
-                    break;
-            }
+        if(isDebugMode) {
+            System.out.println(parseJson(response.toString(), false));
         }
     }
 
@@ -188,6 +152,15 @@ public class Client{
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/config/" + construction.toString();
         System.out.println("Checking construction..");
 
+        String response = doGETquery(url, isDebugMode);
+        listOfRobotConstructions = constructionJsonToObject(response.toString());
+
+        if(isDebugMode) {
+            System.out.println(parseJson(response.toString(), true));
+        }
+    }
+
+    private String doGETquery(String url, boolean isDebugMode) {
         try {
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -197,7 +170,7 @@ public class Client{
 
             responseCode = con.getResponseCode();
 
-            if(isDebugMode) {
+            if (isDebugMode) {
                 System.out.println("Response Code : " + responseCode);
             }
 
@@ -212,24 +185,18 @@ public class Client{
             }
             in.close();
 
-            listOfRobotConstructions = constructionJsonToObject(response.toString());
-
-            if(isDebugMode) {
-                System.out.println(parseJson(response.toString(), true));
-            }
-
+            return response.toString();
         } catch (Exception e) {
-            e.printStackTrace();
             switch(responseCode) {
                 case 404:
                     System.err.println("Robot with this uuid wasn't logged before");
-                    break;
+                    return null;
                 case 500:
                     System.err.println("Check your Internet connection.");
-                    break;
+                    return null;
                 default:
                     System.err.println("Something went wrong.");
-                    break;
+                    return null;
             }
         }
     }
@@ -252,49 +219,18 @@ public class Client{
 
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotSerialNumber+ "/me";
         System.out.println("Checking if logged before..");
+        String response = doGETquery(url, isDebugMode);
 
-            try {
-                URL obj = new URL(url);
-                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-                responseCode = con.getResponseCode();
+        if(response.equals(null) || response == null) {
+            return false;
+        }
 
-                if(isDebugMode) {
-                    System.out.println("Response Code : " + responseCode);
-                }
+        robotStatus = statusJsonToObject(response.toString());
 
+        if(isDebugMode) {
+            System.out.println(parseJson(response.toString(), false));
+        }
 
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(con.getInputStream()));
-
-                String inputLine;
-                StringBuffer response = new StringBuffer();
-
-
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-
-
-                robotStatus = statusJsonToObject(response.toString());
-
-                if(isDebugMode) {
-                    System.out.println(parseJson(response.toString(), false));
-                }
-
-            } catch (Exception e) {
-                switch(responseCode) {
-                    case 404:
-                        System.err.println("Robot with this uuid wasn't logged before");
-                        return false;
-                    case 500:
-                        System.err.println("Check your Internet connection.");
-                        return false;
-                    default:
-                        System.err.println("Something went wrong.");
-                        return false;
-                }
-            }
         return true;
     }
 

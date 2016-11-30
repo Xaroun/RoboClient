@@ -16,7 +16,7 @@ import java.util.LinkedList;
 /**
  * Created by Mateusz on 11.05.2016.
  */
-public class Client<T> {
+public class Client{
 
     private int responseCode;
     private static final String ACCEPT_HEADER = "application/vnd.roboapp.v1+json";
@@ -24,6 +24,7 @@ public class Client<T> {
     private LinkedList<RobotConstruction> listOfRobotConstructions;
     private RobotStatus robotStatus;
     private RobotPairKey robotPairKey;
+    private boolean isDebugMode = false;
 
 
     public static void main(String args[]) {
@@ -35,23 +36,23 @@ public class Client<T> {
         String newRobotSn = "8892acef-8345-483b-a431-49e7abd9f0bf";
         String existingRobotSn = "3f681ded-0d86-4403-af6a-2c0d23ffc664";
 
-        boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn);
+        boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn, isDebugMode);
 
         if(wasLoggedBefore) {
-            checkConstruction(Constructions.EV3);
+            checkConstruction(Constructions.EV3, isDebugMode);
         } else {
-            checkConstruction(Constructions.EV3);
+            checkConstruction(Constructions.EV3, isDebugMode);
             RobotRegister robotRegister = prepareRegistrationBody(newRobotSn, listOfRobotConstructions);
-            registerRobot(robotRegister);
+            registerRobot(robotRegister, isDebugMode);
         }
 
-        checkStatusByRobotId(robotStatus.getRobot_id());
-        getPairKey(robotStatus.getRobot_id());
+        checkStatusByRobotId(robotStatus.getRobot_id(), isDebugMode);
+        getPairKey(robotStatus.getRobot_id(), isDebugMode);
 
         System.out.println("\n PAIR KEY IS: " + robotPairKey.getPair_key());
     }
 
-    private void getPairKey(String robot_id) {
+    private void getPairKey(String robot_id, boolean isDebugMode) {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/tinder/virgins/" + robot_id;
         System.out.println("Getting pairkey.. ");
 
@@ -60,7 +61,9 @@ public class Client<T> {
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
             responseCode = con.getResponseCode();
 
-            System.out.println("Response Code : " + responseCode);
+            if(isDebugMode) {
+                System.out.println("Response Code : " + responseCode);
+            }
 
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(con.getInputStream()));
@@ -76,8 +79,10 @@ public class Client<T> {
 
 
             robotPairKey = pairKeyJsonToObject(response.toString());
-            System.out.println(parseJson(response.toString(), false));
 
+            if(isDebugMode) {
+                System.out.println(parseJson(response.toString(), false));
+            }
 
         } catch (Exception e) {
             switch(responseCode) {
@@ -115,7 +120,7 @@ public class Client<T> {
     }
 
 
-    private void checkStatusByRobotId(String robot_id) {
+    private void checkStatusByRobotId(String robot_id, boolean isDebugMode) {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robot_id+ "/status";
         System.out.println("Checking status by id.. " + robot_id);
 
@@ -124,7 +129,9 @@ public class Client<T> {
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
             responseCode = con.getResponseCode();
 
-            System.out.println("Response Code : " + responseCode);
+            if(isDebugMode) {
+                System.out.println("Response Code : " + responseCode);
+            }
 
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(con.getInputStream()));
@@ -140,7 +147,10 @@ public class Client<T> {
 
 
             robotStatus = statusJsonToObject(response.toString());
-            System.out.println(parseJson(response.toString(), false));
+
+            if(isDebugMode) {
+                System.out.println(parseJson(response.toString(), false));
+            }
 
 
         } catch (Exception e) {
@@ -174,7 +184,7 @@ public class Client<T> {
         return "1";
     }
 
-    private void checkConstruction(Constructions construction) {
+    private void checkConstruction(Constructions construction, boolean isDebugMode) {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/config/" + construction.toString();
         System.out.println("Checking construction..");
 
@@ -186,7 +196,10 @@ public class Client<T> {
             con.setRequestProperty("Content-Type", CONTENT_TYPE_HEADER);
 
             responseCode = con.getResponseCode();
-            System.out.println("Response Code : " + responseCode);
+
+            if(isDebugMode) {
+                System.out.println("Response Code : " + responseCode);
+            }
 
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(con.getInputStream()));
@@ -200,7 +213,10 @@ public class Client<T> {
             in.close();
 
             listOfRobotConstructions = constructionJsonToObject(response.toString());
-            System.out.println(parseJson(response.toString(), true));
+
+            if(isDebugMode) {
+                System.out.println(parseJson(response.toString(), true));
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -232,7 +248,7 @@ public class Client<T> {
         return robotConstructions;
     }
 
-    private boolean checkIfLoggedBefore(String robotSerialNumber) {
+    private boolean checkIfLoggedBefore(String robotSerialNumber, boolean isDebugMode) {
 
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotSerialNumber+ "/me";
         System.out.println("Checking if logged before..");
@@ -242,7 +258,10 @@ public class Client<T> {
                 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
                 responseCode = con.getResponseCode();
 
-                System.out.println("Response Code : " + responseCode);
+                if(isDebugMode) {
+                    System.out.println("Response Code : " + responseCode);
+                }
+
 
                 BufferedReader in = new BufferedReader(
                         new InputStreamReader(con.getInputStream()));
@@ -258,8 +277,10 @@ public class Client<T> {
 
 
                 robotStatus = statusJsonToObject(response.toString());
-                System.out.println(parseJson(response.toString(), false));
 
+                if(isDebugMode) {
+                    System.out.println(parseJson(response.toString(), false));
+                }
 
             } catch (Exception e) {
                 switch(responseCode) {
@@ -277,7 +298,7 @@ public class Client<T> {
         return true;
     }
 
-    private void registerRobot(RobotRegister robotRegister) {
+    private void registerRobot(RobotRegister robotRegister, boolean isDebugMode) {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/register";
 
         System.out.println("Registering... " + robotRegister.getSerial_number());
@@ -306,8 +327,10 @@ public class Client<T> {
 
             int responseCode = con.getResponseCode();
 
-            System.out.println("Post parameters : \n" + body);
-            System.out.println("Response Code : " + responseCode);
+            if(isDebugMode) {
+                System.out.println("Post parameters : \n" + body);
+                System.out.println("Response Code : " + responseCode);
+            }
 
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(con.getInputStream()));
@@ -321,8 +344,10 @@ public class Client<T> {
 
             //print result
             robotStatus = statusJsonToObject(response.toString());
-            System.out.println(parseJson(response.toString(), false));
 
+            if(isDebugMode) {
+                System.out.println(parseJson(response.toString(), false));
+            }
 
         } catch (Exception e) {
             switch(responseCode) {

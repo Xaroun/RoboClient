@@ -6,14 +6,14 @@ import enums.RobotSystem;
 /**
  * Created by Mateusz on 29.11.2016.
  */
-public class RobotPost {
+public class RobotRegister {
 
     private String serial_number;
     private RobotSystem current_system;
-    private int lego_construction;
+    private String lego_construction;
     private Constructions robot_model;
 
-    public RobotPost(String serial_number, RobotSystem current_system, int lego_construction, Constructions robot_model) {
+    public RobotRegister(String serial_number, RobotSystem current_system, String lego_construction, Constructions robot_model) {
         this.serial_number = serial_number;
         this.current_system = current_system;
         this.lego_construction = lego_construction;
@@ -36,11 +36,11 @@ public class RobotPost {
         this.current_system = current_system;
     }
 
-    public int getLego_construction() {
+    public String getLego_construction() {
         return lego_construction;
     }
 
-    public void setLego_construction(int lego_construction) {
+    public void setLego_construction(String lego_construction) {
         this.lego_construction = lego_construction;
     }
 

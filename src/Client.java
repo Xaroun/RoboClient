@@ -1,14 +1,15 @@
 import com.google.gson.*;
 import enums.Constructions;
-import model.RobotPost;
+import enums.RobotSystem;
+import model.RobotConstruction;
+import model.RobotRegister;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Enumeration;
+import java.util.LinkedList;
 
 /**
  * Created by Mateusz on 11.05.2016.
@@ -18,7 +19,8 @@ public class Client {
     private int responseCode;
     private static final String ACCEPT_HEADER = "application/vnd.roboapp.v1+json";
     private static final String CONTENT_TYPE_HEADER = "application/vnd.roboapp.v1+json";
-    private RobotPost robot;
+//    private RobotRegister robotRegister;
+    private LinkedList<RobotConstruction> listOfRobotConstructions;
 
 
     public static void main(String args[]) {
@@ -27,18 +29,35 @@ public class Client {
     }
 
     private void init() {
-        String existingRobot = "4e86790f-b2ab-4945-aaa7-2db83d12b740";
-        String newRobot = "3f681ded-0d86-4403-af6a-2c0d23ffc664";
+        String existingRobotSn = "4e86790f-b2ab-4945-aaa7-2db83d12b740";
+        String newRobotSn = "3f681ded-0d86-4403-af6a-2c0d23ffc664";
 
-        boolean wasLoggedBefore = checkIfLoggedBefore(newRobot);
+        boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn);
 
         if(wasLoggedBefore) {
             checkConstruction(Constructions.EV3);
 
         } else {
             checkConstruction(Constructions.EV3);
-            registerRobot(newRobot, robot);
+            RobotRegister robotRegister = prepareRegistrationBody(newRobotSn, listOfRobotConstructions);
+            registerRobot(robotRegister);
         }
+    }
+
+    private RobotRegister prepareRegistrationBody(String robotSn, LinkedList<RobotConstruction> listOfRobotConstructions) {
+
+        for (RobotConstruction robotConstruction : listOfRobotConstructions) {
+            if(robotConstruction.getId().equals(getConstructionBasedOnSensors())) {
+                RobotRegister robotRegister = new RobotRegister(robotSn, RobotSystem.LEJOS, robotConstruction.getId(), robotConstruction.getRobot_model());
+                return robotRegister;
+            }
+        }
+        return null;
+    }
+
+    private String getConstructionBasedOnSensors() {
+        //THIS METHOD CHECK ROBOT CONSTRUCTION BASED ON SENSORS
+        return "1";
     }
 
     private void checkConstruction(Constructions construction) {
@@ -68,12 +87,12 @@ public class Client {
             }
             in.close();
 
-            Gson gson = new Gson();
-            robot = gson.fromJson(response.toString(), RobotPost.class);
 
+            listOfRobotConstructions = constructionJsonToObject(response.toString());
             System.out.println(parseJson(response.toString(), true));
 
         } catch (Exception e) {
+            e.printStackTrace();
             switch(responseCode) {
                 case 404:
                     System.err.println("Robot with this uuid wasn't logged before");
@@ -86,6 +105,20 @@ public class Client {
                     break;
             }
         }
+    }
+
+    private LinkedList<RobotConstruction> constructionJsonToObject(String rawJson) {
+        JsonParser parser = new JsonParser();
+        Gson gson = new Gson();
+
+        JsonArray robotConstructionArray = parser.parse(rawJson).getAsJsonArray();
+        LinkedList<RobotConstruction> robotConstructions = new LinkedList<>();
+        for (JsonElement robotConstruction : robotConstructionArray) {
+            RobotConstruction aRobotConstruction = gson.fromJson(robotConstruction, RobotConstruction.class);
+            robotConstructions.add(aRobotConstruction);
+        }
+
+        return robotConstructions;
     }
 
     private boolean checkIfLoggedBefore(String robotSerialNumber) {
@@ -133,65 +166,65 @@ public class Client {
         return true;
     }
 
-    private void registerRobot(String robotSerialNumber, RobotPost robot) {
+    private void registerRobot(RobotRegister robotRegister) {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/register";
 
-        System.out.println(robot.getCurrent_system());
-        System.out.println(robot.getLego_construction());
-        System.out.println(robot.getRobot_model());
-        System.out.println(robot.getSerial_number());
+        System.out.println("Registering... " + robotRegister.getSerial_number());
+        try {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-//        System.out.println("Registering " + robotSerialNumber);
-//        try {
-//
-//            URL obj = new URL(url);
-//            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-//
-//            //add request header
-//            con.setRequestMethod("POST");
-//            con.setRequestProperty("Accept", ACCEPT_HEADER);
-//            con.setRequestProperty("Content-Type", CONTENT_TYPE_HEADER);
-//
-//            String body = "{\n" +
-//                    "\"serial_number\": \"" + robotSerialNumber + "\",\n" +
-//                    "\"current_system\": \"LEJOS\"\n" +
-//                    "\"lego_construction\": \"1\"\n" +
-//                    "\"robot_model\": \"EV3\"\n" +
-//                    "}";
-//
-//            System.out.println(body);
-//
-//
-//            //send post request
-//            con.setDoOutput(true);
-//            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-//            wr.writeBytes(body);
-//            wr.flush();
-//            wr.close();
-//
-//            int responseCode = con.getResponseCode();
-//
-//            System.out.println("Post parameters : " + body);
-//            System.out.println("Response Code : " + responseCode);
-//
-//            BufferedReader in = new BufferedReader(
-//                    new InputStreamReader(con.getInputStream()));
-//            String inputLine;
-//            StringBuffer response = new StringBuffer();
-//
-//            while ((inputLine = in.readLine()) != null) {
-//                response.append(inputLine);
-//            }
-//            in.close();
-//
-//            //print result
-//            System.out.println(response.toString());
-//
-//
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+            //add request header
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Accept", ACCEPT_HEADER);
+            con.setRequestProperty("Content-Type", CONTENT_TYPE_HEADER);
+
+            String body = "{\n" +
+                    "\"serial_number\": \"" + robotRegister.getSerial_number() + "\",\n" +
+                    "\"current_system\": \"" + robotRegister.getCurrent_system() + "\",\n" +
+                    "\"lego_construction\": \"" + robotRegister.getLego_construction() + "\",\n" +
+                    "\"robot_model\": \"" + robotRegister.getRobot_model() + "\"\n" +
+                    "}";
+
+            //send post request
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(body);
+            wr.flush();
+            wr.close();
+
+            int responseCode = con.getResponseCode();
+
+            System.out.println("Post parameters : \n" + body);
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            //print result
+            System.out.println(response.toString());
+
+
+        } catch (Exception e) {
+            switch(responseCode) {
+                case 400:
+                    System.err.println("This serial number is already used");
+                    break;
+                case 500:
+                    System.err.println("Check your Internet connection.");
+                    break;
+                default:
+                    System.err.println("Something went wrong.");
+                    break;
+            }
+        }
     }
 
     private String parseJson(String rawJson, boolean isArray) {
@@ -208,7 +241,7 @@ public class Client {
         }
     }
 
-    private void sendPost() {
+    private void sendOldPostWithIp() {
         String url = "http://127.0.0.1:5000/robots";
 
         try {
@@ -295,65 +328,4 @@ public class Client {
         return ip;
     }
 
-
-    private void sendNewPost() {
-        String myRobotId = "1234";
-        String myGameId = "TIC_TAC_TOE";
-
-        String url = "http://127.0.0.1:5000/api/robots/" + myRobotId + "/games/" + myGameId + "/new";
-
-        try {
-
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            //add request header
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Accept", "application/json");
-            con.setRequestProperty("Content-Type", "application/json");
-
-//            String urlParameters = "{\n" +
-//                    "    \"ip\": \"178.206.211.09\",\n" +
-//                    "    \"sn\": \"EV3POZNAN\"\n" +
-//                    "}";
-
-            String body = "{\n" +
-                                "\"ip\": \"" + "aaaaaa" + "\",\n" +
-                                "\"sn\": \"EV3POZ\"\n" +
-                           "}";
-
-//            System.out.println(urlParameters);
-
-
-            //send post request
-            con.setDoOutput(true);
-            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-            wr.writeBytes(body);
-            wr.flush();
-            wr.close();
-
-            int responseCode = con.getResponseCode();
-            System.out.println("\nSending 'POST' request to URL : " + url);
-            System.out.println("Post parameters : " + body);
-            System.out.println("Response Code : " + responseCode);
-
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuffer response = new StringBuffer();
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-            //print result
-            System.out.println(response.toString());
-
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

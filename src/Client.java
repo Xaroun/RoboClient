@@ -3,6 +3,7 @@ import enums.Constructions;
 import enums.RobotSystem;
 import model.RobotConstruction;
 import model.RobotRegister;
+import model.RobotStatus;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -19,8 +20,8 @@ public class Client {
     private int responseCode;
     private static final String ACCEPT_HEADER = "application/vnd.roboapp.v1+json";
     private static final String CONTENT_TYPE_HEADER = "application/vnd.roboapp.v1+json";
-//    private RobotRegister robotRegister;
     private LinkedList<RobotConstruction> listOfRobotConstructions;
+    private RobotStatus robotStatus;
 
 
     public static void main(String args[]) {
@@ -29,18 +30,63 @@ public class Client {
     }
 
     private void init() {
-        String existingRobotSn = "4e86790f-b2ab-4945-aaa7-2db83d12b740";
-        String newRobotSn = "3f681ded-0d86-4403-af6a-2c0d23ffc664";
+        String newRobotSn = "8892acef-8345-483b-a431-49e7abd9f0bf";
+        String existingRobotSn = "3f681ded-0d86-4403-af6a-2c0d23ffc664";
 
         boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn);
 
         if(wasLoggedBefore) {
             checkConstruction(Constructions.EV3);
-
         } else {
             checkConstruction(Constructions.EV3);
             RobotRegister robotRegister = prepareRegistrationBody(newRobotSn, listOfRobotConstructions);
             registerRobot(robotRegister);
+        }
+
+        checkStatusByRobotId(robotStatus.getRobot_id());
+
+    }
+
+    private void checkStatusByRobotId(String robot_id) {
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robot_id+ "/status";
+        System.out.println("Checking status by id.. " + robot_id);
+
+        try {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            responseCode = con.getResponseCode();
+
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+
+            robotStatus = statusJsonToObject(response.toString());
+            System.out.println(parseJson(response.toString(), false));
+
+
+        } catch (Exception e) {
+            switch(responseCode) {
+                case 404:
+                    System.err.println("Robot with this uuid not found");
+                    break;
+                case 500:
+                    System.err.println("Check your Internet connection.");
+                    break;
+                default:
+                    System.err.println("Something went wrong.");
+                    break;
+            }
         }
     }
 
@@ -72,7 +118,6 @@ public class Client {
             con.setRequestProperty("Content-Type", CONTENT_TYPE_HEADER);
 
             responseCode = con.getResponseCode();
-
             System.out.println("Response Code : " + responseCode);
 
             BufferedReader in = new BufferedReader(
@@ -81,12 +126,10 @@ public class Client {
             String inputLine;
             StringBuffer response = new StringBuffer();
 
-
             while ((inputLine = in.readLine()) != null) {
                 response.append(inputLine);
             }
             in.close();
-
 
             listOfRobotConstructions = constructionJsonToObject(response.toString());
             System.out.println(parseJson(response.toString(), true));
@@ -129,8 +172,6 @@ public class Client {
             try {
                 URL obj = new URL(url);
                 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-
                 responseCode = con.getResponseCode();
 
                 System.out.println("Response Code : " + responseCode);
@@ -147,6 +188,8 @@ public class Client {
                 }
                 in.close();
 
+
+                robotStatus = statusJsonToObject(response.toString());
                 System.out.println(parseJson(response.toString(), false));
 
 
@@ -164,6 +207,16 @@ public class Client {
                 }
             }
         return true;
+    }
+
+    private RobotStatus statusJsonToObject(String rawJson) {
+        JsonParser parser = new JsonParser();
+        Gson gson = new Gson();
+
+        JsonElement robotStatusElement = parser.parse(rawJson).getAsJsonObject();
+        RobotStatus robotStatus = gson.fromJson(robotStatusElement, RobotStatus.class);
+
+        return robotStatus;
     }
 
     private void registerRobot(RobotRegister robotRegister) {
@@ -209,7 +262,8 @@ public class Client {
             in.close();
 
             //print result
-            System.out.println(response.toString());
+            robotStatus = statusJsonToObject(response.toString());
+            System.out.println(parseJson(response.toString(), false));
 
 
         } catch (Exception e) {

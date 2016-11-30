@@ -33,9 +33,8 @@ public class Client{
     }
 
     private void init() {
-        String newRobotSn = "8892acef-8345-483b-a431-49e7abd9f0bf";
-        String existingRobotSn = "3f681ded-0d86-4403-af6a-2c0d23ffc664";
-
+        String newRobotSn = "c15ff304-89cf-4c84-8507-b2ba39dbd4a0";
+        
         boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn, isDebugMode);
 
         if(wasLoggedBefore) {
@@ -221,7 +220,7 @@ public class Client{
         System.out.println("Checking if logged before..");
         String response = doGETquery(url, isDebugMode);
 
-        if(response.equals(null) || response == null) {
+        if(response == null || response.equals(null)) {
             return false;
         }
 

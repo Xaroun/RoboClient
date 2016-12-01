@@ -12,12 +12,22 @@ public class RobotRegister {
     private RobotSystem current_system;
     private String lego_construction;
     private Constructions robot_model;
+    private String robot_ip;
 
-    public RobotRegister(String serial_number, RobotSystem current_system, String lego_construction, Constructions robot_model) {
+    public RobotRegister(String serial_number, RobotSystem current_system, String lego_construction, Constructions robot_model, String robot_ip) {
         this.serial_number = serial_number;
         this.current_system = current_system;
         this.lego_construction = lego_construction;
         this.robot_model = robot_model;
+        this.robot_ip = robot_ip;
+    }
+
+    public String getRobot_ip() {
+        return robot_ip;
+    }
+
+    public void setRobot_ip(String robot_ip) {
+        this.robot_ip = robot_ip;
     }
 
     public String getSerial_number() {

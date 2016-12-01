@@ -33,22 +33,29 @@ public class Client{
     }
 
     private void init() {
-        String newRobotSn = "c15ff304-89cf-4c84-8507-b2ba39dbd4a0";
-        
-        boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn, isDebugMode);
+        String newRobotSn = "95cc14b3-733c-47c2-ae27-f561fd19aaa0";
 
-        if(wasLoggedBefore) {
-            checkConstruction(Constructions.EV3, isDebugMode);
-        } else {
-            checkConstruction(Constructions.EV3, isDebugMode);
-            RobotRegister robotRegister = prepareRegistrationBody(newRobotSn, listOfRobotConstructions);
-            registerRobot(robotRegister, isDebugMode);
+        try {
+
+
+            boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn, isDebugMode);
+
+            if (wasLoggedBefore) {
+                checkConstruction(Constructions.EV3, isDebugMode);
+            } else {
+                checkConstruction(Constructions.EV3, isDebugMode);
+                RobotRegister robotRegister = prepareRegistrationBody(newRobotSn, listOfRobotConstructions);
+                registerRobot(robotRegister, isDebugMode);
+            }
+
+            checkStatusByRobotId(robotStatus.getRobot_id(), isDebugMode);
+            getPairKey(robotStatus.getRobot_id(), isDebugMode);
+
+            System.out.println("\n PAIR KEY IS: " + robotPairKey.getPair_key());
+
+        } catch(Exception e) {
+            e.printStackTrace();
         }
-
-        checkStatusByRobotId(robotStatus.getRobot_id(), isDebugMode);
-        getPairKey(robotStatus.getRobot_id(), isDebugMode);
-
-        System.out.println("\n PAIR KEY IS: " + robotPairKey.getPair_key());
     }
 
     private void getPairKey(String robot_id, boolean isDebugMode) {
@@ -135,7 +142,7 @@ public class Client{
 
         for (RobotConstruction robotConstruction : listOfRobotConstructions) {
             if(robotConstruction.getId().equals(getConstructionBasedOnSensors())) {
-                RobotRegister robotRegister = new RobotRegister(robotSn, RobotSystem.LEJOS, robotConstruction.getId(), robotConstruction.getRobot_model());
+                RobotRegister robotRegister = new RobotRegister(robotSn, RobotSystem.LEJOS, robotConstruction.getId(), robotConstruction.getRobot_model(), getIp());
                 return robotRegister;
             }
         }
@@ -250,7 +257,8 @@ public class Client{
                     "\"serial_number\": \"" + robotRegister.getSerial_number() + "\",\n" +
                     "\"current_system\": \"" + robotRegister.getCurrent_system() + "\",\n" +
                     "\"lego_construction\": \"" + robotRegister.getLego_construction() + "\",\n" +
-                    "\"robot_model\": \"" + robotRegister.getRobot_model() + "\"\n" +
+                    "\"robot_model\": \"" + robotRegister.getRobot_model() + "\",\n" +
+                    "\"robot_ip\": \"" + robotRegister.getRobot_ip() + "\"\n" +
                     "}";
 
             //send post request

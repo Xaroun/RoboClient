@@ -1,3 +1,3 @@
 # RoboClient
 
-Simple robo client used in pairing and polling for statuses.
+(not)Simple robo client used in pairing with mobile app.

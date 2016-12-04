@@ -33,7 +33,7 @@ public class Client{
     }
 
     private void init() {
-        String newRobotSn = "95cc14b3-733c-47c2-ae27-f561fd19aaa0";
+        String newRobotSn = "d4daf6c2-386c-4bd5-98f6-dfe4d7be09ee";
 
         try {
 

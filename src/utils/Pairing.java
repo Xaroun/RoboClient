@@ -42,19 +42,31 @@ public class Pairing {
 
             if (wasLoggedBefore) {
                 checkConstruction(Constructions.EV3, isDebugMode);
+                loginRobot();
             } else {
                 checkConstruction(Constructions.EV3, isDebugMode);
                 RobotRegister robotRegister = prepareRegistrationBody(newRobotSn, listOfRobotConstructions);
                 registerRobot(robotRegister, isDebugMode);
             }
 
-            checkStatusByRobotId(robotStatus.getRobot_id(), isDebugMode);
             getPairKey(robotStatus.getRobot_id(), isDebugMode);
 
             System.out.println("\n PAIR KEY IS: " + robotPairKey.getPair_key());
 
         } catch(Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void loginRobot() {
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotStatus.getRobot_id() +" /login";
+        System.out.println("Logging.. ");
+
+        String response = httpQueries.doGETquery(url, isDebugMode);
+        robotStatus = jsonUtils.statusJsonToObject(response.toString());
+
+        if(isDebugMode) {
+            System.out.println(jsonUtils.parseJson(response.toString(), false));
         }
     }
 
@@ -105,6 +117,7 @@ public class Pairing {
         }
     }
 
+    @Deprecated
     private void checkStatusByRobotId(String robot_id, boolean isDebugMode) {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robot_id+ "/status";
         System.out.println("Checking status by id.. " + robot_id);

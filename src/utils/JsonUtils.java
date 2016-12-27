@@ -2,8 +2,9 @@ package utils;
 
 import com.google.gson.*;
 import model.RobotConstruction;
+import model.RobotInfoWithStatus;
 import model.RobotPairKey;
-import model.RobotStatus;
+import model.RobotInfo;
 
 import java.util.LinkedList;
 
@@ -23,14 +24,24 @@ public class JsonUtils {
         return robotPairKey;
     }
 
-    public RobotStatus statusJsonToObject(String rawJson) {
+    public RobotInfo statusJsonToObject(String rawJson) {
         JsonParser parser = new JsonParser();
         Gson gson = new Gson();
 
         JsonElement robotStatusElement = parser.parse(rawJson).getAsJsonObject();
-        RobotStatus robotStatus = gson.fromJson(robotStatusElement, RobotStatus.class);
+        RobotInfo robotInfo = gson.fromJson(robotStatusElement, RobotInfo.class);
 
-        return robotStatus;
+        return robotInfo;
+    }
+
+    public RobotInfoWithStatus infoWithStatusJsonToObject(String rawJson) {
+        JsonParser parser = new JsonParser();
+        Gson gson = new Gson();
+
+        JsonElement robotStatusElement = parser.parse(rawJson).getAsJsonObject();
+        RobotInfoWithStatus robotInfoWithStatus = gson.fromJson(robotStatusElement, RobotInfoWithStatus.class);
+
+        return robotInfoWithStatus;
     }
 
     public String parseJson(String rawJson, boolean isArray) {

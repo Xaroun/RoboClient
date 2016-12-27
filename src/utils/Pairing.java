@@ -1,12 +1,8 @@
 package utils;
 
-import com.google.gson.*;
 import enums.Constructions;
 import enums.RobotSystem;
-import model.RobotConstruction;
-import model.RobotPairKey;
-import model.RobotRegister;
-import model.RobotStatus;
+import model.*;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -22,11 +18,12 @@ public class Pairing {
 
     private int responseCode;
     private LinkedList<RobotConstruction> listOfRobotConstructions;
-    private RobotStatus robotStatus;
+    private RobotInfo robotInfo;
     private RobotPairKey robotPairKey;
     private boolean isDebugMode = false;
     private JsonUtils jsonUtils;
     private HttpQueries httpQueries;
+    private RobotInfoWithStatus robotInfoWithStatus;
 
     public Pairing(String newRobotSn) {
         this.jsonUtils = new JsonUtils();
@@ -37,9 +34,7 @@ public class Pairing {
 
     private void init(String newRobotSn) {
         try {
-
             boolean wasLoggedBefore = checkIfLoggedBefore(newRobotSn, isDebugMode);
-
             if (wasLoggedBefore) {
                 checkConstruction(Constructions.EV3, isDebugMode);
                 loginRobot();
@@ -48,25 +43,22 @@ public class Pairing {
                 RobotRegister robotRegister = prepareRegistrationBody(newRobotSn, listOfRobotConstructions);
                 registerRobot(robotRegister, isDebugMode);
             }
-
-            getPairKey(robotStatus.getRobot_id(), isDebugMode);
-
+            getPairKey(robotInfoWithStatus.getRobot_id(), isDebugMode);
             System.out.println("\n PAIR KEY IS: " + robotPairKey.getPair_key());
-
         } catch(Exception e) {
             e.printStackTrace();
         }
     }
 
     private void loginRobot() {
-        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotStatus.getRobot_id() +" /login";
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotInfo.getRobot_id() +" /login";
         System.out.println("Logging.. ");
 
         String response = httpQueries.doGETquery(url, isDebugMode);
-        robotStatus = jsonUtils.statusJsonToObject(response.toString());
+        robotInfoWithStatus = jsonUtils.infoWithStatusJsonToObject(response);
 
         if(isDebugMode) {
-            System.out.println(jsonUtils.parseJson(response.toString(), false));
+            System.out.println(jsonUtils.parseJson(response, false));
         }
     }
 
@@ -123,10 +115,10 @@ public class Pairing {
         System.out.println("Checking status by id.. " + robot_id);
 
         String response = httpQueries.doGETquery(url, isDebugMode);
-        robotStatus = jsonUtils.statusJsonToObject(response.toString());
+        robotInfo = jsonUtils.statusJsonToObject(response);
 
         if(isDebugMode) {
-            System.out.println(jsonUtils.parseJson(response.toString(), false));
+            System.out.println(jsonUtils.parseJson(response, false));
         }
     }
 
@@ -151,10 +143,10 @@ public class Pairing {
         System.out.println("Checking construction..");
 
         String response = httpQueries.doGETquery(url, isDebugMode);
-        listOfRobotConstructions = jsonUtils.constructionJsonToObject(response.toString());
+        listOfRobotConstructions = jsonUtils.constructionJsonToObject(response);
 
         if(isDebugMode) {
-            System.out.println(jsonUtils.parseJson(response.toString(), true));
+            System.out.println(jsonUtils.parseJson(response, true));
         }
     }
 
@@ -168,10 +160,10 @@ public class Pairing {
             return false;
         }
 
-        robotStatus = jsonUtils.statusJsonToObject(response.toString());
+        robotInfo = jsonUtils.statusJsonToObject(response);
 
         if(isDebugMode) {
-            System.out.println(jsonUtils.parseJson(response.toString(), false));
+            System.out.println(jsonUtils.parseJson(response, false));
         }
 
         return true;
@@ -223,7 +215,7 @@ public class Pairing {
             in.close();
 
             //print result
-            robotStatus = jsonUtils.statusJsonToObject(response.toString());
+            robotInfoWithStatus = jsonUtils.infoWithStatusJsonToObject(response.toString());
 
             if(isDebugMode) {
                 System.out.println(jsonUtils.parseJson(response.toString(), false));

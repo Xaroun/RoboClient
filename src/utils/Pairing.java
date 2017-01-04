@@ -20,7 +20,7 @@ public class Pairing {
     private LinkedList<RobotConstruction> listOfRobotConstructions;
     private RobotInfo robotInfo;
     private RobotPairKey robotPairKey;
-    private boolean isDebugMode = true;
+    private boolean isDebugMode = false;
     private JsonUtils jsonUtils;
     private HttpQueries httpQueries;
     private RobotInfoWithStatus robotInfoWithStatus;
@@ -53,7 +53,6 @@ public class Pairing {
     private void loginRobot() {
         String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotInfo.getRobot_id() + "/login";
         System.out.println("Logging.. ");
-        System.out.println(url);
 
         try {
             URL obj = new URL(url);

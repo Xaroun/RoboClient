@@ -20,7 +20,7 @@ public class Pairing {
     private LinkedList<RobotConstruction> listOfRobotConstructions;
     private RobotInfo robotInfo;
     private RobotPairKey robotPairKey;
-    private boolean isDebugMode = false;
+    private boolean isDebugMode = true;
     private JsonUtils jsonUtils;
     private HttpQueries httpQueries;
     private RobotInfoWithStatus robotInfoWithStatus;
@@ -51,14 +51,70 @@ public class Pairing {
     }
 
     private void loginRobot() {
-        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotInfo.getRobot_id() +" /login";
+        String url = "http://s396393.vm.wmi.amu.edu.pl/api/robots/" + robotInfo.getRobot_id() + "/login";
         System.out.println("Logging.. ");
+        System.out.println(url);
 
-        String response = httpQueries.doGETquery(url, isDebugMode);
-        robotInfoWithStatus = jsonUtils.infoWithStatusJsonToObject(response);
+        try {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-        if(isDebugMode) {
-            System.out.println(jsonUtils.parseJson(response, false));
+            //add request header
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Accept", Headers.ACCEPT);
+            con.setRequestProperty("Content-Type", Headers.CONTENT_TYPE);
+
+            String body = "{\n" +
+                    "\"id\": \"" + robotInfo.getRobot_id() + "\",\n" +
+                    "\"current_system\": \"" + robotInfo.getCurrent_system() + "\",\n" +
+                    "\"lego_construction\": \"" + robotInfo.getCurrent_lego_construction().getId() + "\",\n" +
+                    "\"robot_model\": \"" + robotInfo.getRobot_model() + "\",\n" +
+                    "\"robot_ip\": \"" + getIp()+ "\"\n" +
+                    "}";
+
+            //send post request
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(body);
+            wr.flush();
+            wr.close();
+
+            int responseCode = con.getResponseCode();
+
+            if(isDebugMode) {
+                System.out.println("Post parameters : \n" + body);
+                System.out.println("Response Code : " + responseCode);
+            }
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            //print result
+            robotInfoWithStatus = jsonUtils.infoWithStatusJsonToObject(response.toString());
+
+            if(isDebugMode) {
+                System.out.println(jsonUtils.parseJson(response.toString(), false));
+            }
+
+        } catch (Exception e) {
+            switch(responseCode) {
+                case 400:
+                    System.err.println("Problem");
+                    break;
+                case 500:
+                    System.err.println("Check your Internet connection.");
+                    break;
+                default:
+                    System.err.println("Something went wrong.");
+                    break;
+            }
         }
     }
 

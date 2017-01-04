@@ -11,7 +11,7 @@ public class Client{
     }
 
     private void init() {
-        String newRobotSn = "63d198c1-0361-4a7c-80d2-41a65c0b5e4c";
+        String newRobotSn = "3a4cd9b6-0685-4813-acfc-424519fb4d45";
 
         //PAIR NEW ROBOT
         new Pairing(newRobotSn);

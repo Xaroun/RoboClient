@@ -190,7 +190,7 @@ public class Pairing {
 
     private String getConstructionBasedOnSensors() {
         //THIS METHOD CHECK ROBOT CONSTRUCTION BASED ON SENSORS
-        return "1";
+        return "226";
     }
 
     private void checkConstruction(Constructions construction, boolean isDebugMode) {
